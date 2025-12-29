@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/netip"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ctrlsam/rigour/pkg/crawler/discovery"
@@ -17,8 +18,8 @@ import (
 // ScanTargetWithDiscoveryStream runs discovery and fingerprinting and invokes onEvent
 // as soon as a service is identified.
 //
-// Note: today this runs fingerprinting inline inside naabu's callback; if you later
-// parallelize scanning, ensure onEvent is concurrency-safe.
+// Fingerprinting runs concurrently with a configurable worker pool to avoid blocking
+// port discovery. The onEvent callback must be concurrency-safe.
 func ScanTargetWithDiscoveryStream(
 	ipRange string,
 	cfg discovery.DiscoveryConfig,
@@ -34,23 +35,69 @@ func ScanTargetWithDiscoveryStream(
 		return fmt.Errorf("onEvent callback is nil")
 	}
 
-	onOpen := func(r discovery.Result) {
-		fmt.Println("Discovered open port:", r.Host, r.Port)
-		addr := netip.AddrPortFrom(netip.MustParseAddr(r.Host), uint16(r.Port))
-		t := plugins.Target{Address: addr}
+	// Channel for discovered ports
+	portQueue := make(chan discovery.Result, 100)
 
-		svc, err := scanCfg.ScanTarget(t)
-		if err == nil && svc != nil {
-			out := types.FromPluginService(svc, time.Now())
-			onEvent(*out)
+	// WaitGroup to track fingerprinting workers
+	var wg sync.WaitGroup
+
+	// Number of concurrent fingerprinting workers
+	// Adjust based on your network/target constraints
+	numWorkers := 20
+
+	// Start fingerprinting workers
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for r := range portQueue {
+				addr := netip.AddrPortFrom(netip.MustParseAddr(r.Host), uint16(r.Port))
+				t := plugins.Target{Address: addr}
+
+				svc, err := scanCfg.FingerprintTarget(t)
+				if err == nil && svc != nil {
+					out := types.FromPluginService(svc, time.Now())
+					onEvent(*out)
+				}
+			}
+		}()
+	}
+
+	onOpen := func(r discovery.Result) {
+		// discard ipv6 result - not sure why naabu returns these
+		if strings.Contains(r.Host, ":") {
+			return
+		}
+
+		fmt.Println("Discovered open port:", r.Host, r.Port)
+
+		// Non-blocking send to worker pool
+		select {
+		case portQueue <- r:
+		default:
+			// Queue full, fingerprint inline to avoid dropping
+			addr := netip.AddrPortFrom(netip.MustParseAddr(r.Host), uint16(r.Port))
+			t := plugins.Target{Address: addr}
+			svc, err := scanCfg.FingerprintTarget(t)
+			if err == nil && svc != nil {
+				out := types.FromPluginService(svc, time.Now())
+				onEvent(*out)
+			}
 		}
 	}
 
-	return naabu.Run(ctx, ipRange, discovery.DiscoveryConfig{
+	// Run discovery
+	err := naabu.Run(ctx, ipRange, discovery.DiscoveryConfig{
 		ScanType: cfg.ScanType,
 		Ports:    cfg.Ports,
 		TopPorts: cfg.TopPorts,
 		Retries:  cfg.Retries,
 		Rate:     cfg.Rate,
 	}, onOpen)
+
+	// Close queue and wait for workers to finish
+	close(portQueue)
+	wg.Wait()
+
+	return err
 }

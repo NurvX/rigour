@@ -26,7 +26,8 @@ func Run(ctx context.Context, ipRange string, opts discovery.DiscoveryConfig, on
 		TopPorts: opts.TopPorts,
 		Rate:     opts.Rate,
 		Retries:  opts.Retries,
-		//Silent:            true,
+		Threads:  100,
+		//Silent:   true,
 	}
 
 	naabuOpts.OnReceive = func(hr *naabuResult.HostResult) {
@@ -35,7 +36,7 @@ func Run(ctx context.Context, ipRange string, opts discovery.DiscoveryConfig, on
 			onResult(discovery.Result{
 				Host:     hr.IP,
 				Port:     p.Port,
-				Protocol: "tcp",
+				Protocol: p.Protocol.String(),
 			})
 		}
 	}

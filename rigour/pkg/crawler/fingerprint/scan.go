@@ -62,7 +62,7 @@ func setupPlugins() {
 // only attempts to fingerprint services by mapping them to their default port.
 // The slow lane isn't as focused on performance and instead tries to be as
 // accurate as possible.
-func (c *FingerprintConfig) ScanTarget(target plugins.Target) (*plugins.Service, error) {
+func (c *FingerprintConfig) FingerprintTarget(target plugins.Target) (*plugins.Service, error) {
 	ip := target.Address.Addr().String()
 	port := target.Address.Port()
 
