@@ -1,67 +1,77 @@
 services:
-  # ============================================
-  # Kafka
-  # ============================================
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.1
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: confluentinc/cp-kafka:7.3.1
-    container_name: kafka
+  crawler:
+    build:
+      context: ./rigour
+      dockerfile: Dockerfile.crawler
+    container_name: rigour-crawler
     depends_on:
-      - zookeeper
+      kafka:
+        condition: service_healthy
+    command:
+      - "${CRAWLER_CIDR:-0.0.0.0/0}"
+      - "--kafka-brokers"
+      - "kafka:9092"
+      - "--top-ports"
+      - "${CRAWLER_DISCOVERY_TOP_PORTS:-1000}"
+    networks:
+      - rigour-network
+    restart: unless-stopped
+
+  persistence:
+    build:
+      context: ./rigour
+      dockerfile: Dockerfile.persistence
+    container_name: rigour-persistence
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+      # go-geo-ip:
+      #   condition: service_started
+    command:
+      - "--brokers"
+      - "kafka:9092"
+      - "--mongo-uri"
+      - "mongodb://mongo:27017"
+      - "--geoip-url"
+      - "http://go-geo-ip:5000"
+      - "--geoip-key"
+      - "${MAXMIND_LICENSE_KEY:-mykey}"
+    networks:
+      - rigour-network
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./rigour
+      dockerfile: Dockerfile.api
+    container_name: rigour-api
     ports:
-      - "9092:9092"
-      - "29092:29092"
+      - "8080:8080"
+    command:
+      - "--mongo-uri"
+      - "mongodb://mongo:27017"
+    depends_on:
+      - mongo
+    networks:
+      - rigour-network
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: ./rigour-ui
+    container_name: rigour-ui
+    depends_on:
+     - api
+    ports:
+      - "3000:3000"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - NEXT_PUBLIC_API_BASE_URL=http://api:8080
+    networks:
+      - rigour-network
+    restart: unless-stopped
 
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    ports:
-      - "9000:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: disabled
-
-  # ============================================
-  # Atlas (GeoIP Database)
-  # ============================================
-
-  go-geo-ip:
-    image: hibare/go-geo-ip:latest
-    container_name: go-geo-ip
-    ports:
-      - "5000:5000"
-    environment:
-      DB_LICENSE_KEY: ${MINDMAX_LICENSE_KEY}
-      API_KEYS: mykey
-
-  # ============================================
-  # MongoDB
-  # ============================================
-
-  mongo:
-    image: mongo:latest
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
+networks:
+  rigour-network:
+    driver: bridge

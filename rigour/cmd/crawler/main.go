@@ -151,9 +151,9 @@ func init() {
 
 	// Discovery flags - These control how rigour discovers open ports.
 	rootCmd.PersistentFlags().StringVar(&config.kafkaBrokers, "kafka-brokers", "localhost:29092", "kafka brokers (comma-separated host:port list); set empty to disable")
-	rootCmd.PersistentFlags().StringVar(&config.scanType, "scan-type", "s", "discovery scan type (naabu; e.g. c=connect, s=syn)")
+	rootCmd.PersistentFlags().StringVar(&config.scanType, "scan-type", "c", "discovery scan type (naabu; e.g. c=connect, s=syn)")
 	rootCmd.PersistentFlags().StringVar(&config.ports, "ports", "", "ports list (e.g. 80,443). If set, overrides top ports")
-	rootCmd.PersistentFlags().StringVar(&config.topPorts, "top-ports", "100", "top ports (e.g. 100, 1000, full)") // full
+	rootCmd.PersistentFlags().StringVar(&config.topPorts, "top-ports", "1000", "top ports (e.g. 100, 1000, full)") // full
 	rootCmd.PersistentFlags().IntVar(&config.retries, "retries", 1, "discovery retries")
 	rootCmd.PersistentFlags().IntVar(&config.rate, "rate", 50_000, "discovery rate (packets per second)")
 }

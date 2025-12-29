@@ -2,7 +2,7 @@ import { SearchHeader } from '../../components/SearchHeader';
 import { FacetFilters } from '../../components/FacetFilters';
 import { HostResults } from '../../components/HostResults';
 import WorldMap from '../../components/ui/world-map';
-import { searchHosts, getFacets, FacetCounts } from '../../lib/api';
+import { searchHosts, getFacets, FacetCounts, API_BASE_URL } from '../../lib/api';
 import { Host } from '../../lib/types';
 
 interface PageProps {
@@ -111,7 +111,7 @@ export default async function Home({ searchParams: searchParamsPromise }: PagePr
         <div className="container mx-auto px-4 py-8">
           <div className="text-red-500">Error: {error}</div>
           <p className="text-sm text-gray-400 mt-2">
-            Make sure the API is running at http://localhost:8080
+            Make sure the API is running at {API_BASE_URL}
           </p>
         </div>
       </div>
