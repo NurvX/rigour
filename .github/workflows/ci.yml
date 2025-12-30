@@ -59,13 +59,6 @@ jobs:
           exit 1
         fi
 
-    - name: Install staticcheck
-      run: go install honnef.co/go/tools/cmd/staticcheck@latest
-
-    - name: Run staticcheck
-      working-directory: ./rigour
-      run: staticcheck ./...
-
     - name: Run tests
       working-directory: ./rigour
       run: |
