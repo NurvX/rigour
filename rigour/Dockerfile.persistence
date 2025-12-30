@@ -1,4 +1,4 @@
-# Multi-stage build for the crawler service
+# Multi-stage build for the persistence service
 # Stage 1: Build
 FROM golang:1.24.0-alpine AS builder
 
@@ -13,8 +13,8 @@ COPY . .
 # Download dependencies
 RUN go mod download
 
-# Build the persistence binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o persistence ./cmd/persistence
+# Build the persistence binary for target platform
+RUN go build -a -installsuffix cgo -o persistence ./cmd/persistence
 
 # Stage 2: Runtime
 FROM alpine:latest

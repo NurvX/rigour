@@ -4,11 +4,10 @@
 [![GitHub Issues](https://img.shields.io/github/issues/ctrlsam/rigour?style=flat-square)](https://github.com/ctrlsam/rigour/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/ctrlsam/rigour?style=flat-square)](https://github.com/ctrlsam/rigour)
 
-Rigour is a comprehensive Internet of Things (IoT) scanning tool designed to discover, analyze, and report on devices connected to the internet. Rigour performs large-scale network scans to identify active hosts, retrieve service banners, and detect potential vulnerabilities. Rigour was inspired by [Shodan.io](https://www.shodan.io/), a popular IoT search engine. If you find this project useful, please consider starring the repository!
+Rigour is a comprehensive Internet of Things (IoT) scanning tool designed to discover, analyze, and report on devices connected to the internet. Rigour performs large-scale network scans to identify active hosts, retrieve service banners, and detect potential vulnerabilities. Rigour was inspired by Shodan.io, a popular IoT search engine. If you find this project useful, please consider starring the repository.
 
 > [!WARNING]
 > Rigour is intended for ethical use only. Always obtain permission before scanning networks and devices that you do not own. Use this tool responsibly and in compliance with all applicable laws and regulations.
-
 
 ## Get Started
 
@@ -64,15 +63,15 @@ Rigour's architecture comprises several interconnected components that work in h
 
 #### Crawler
 
-The Crawler is responsible for performing large-scale network scans using [Naabu](https://github.com/projectdiscovery/naabu) and fingerprinting the discovered devices with [Fingerprintx](https://github.com/praetorian-inc/fingerprintx). Results from this are published to Kafka for further processing. The microservice design was chosen to support multiple worker nodes in the future.
+The Crawler is responsible for performing large-scale network scans using [Naabu](https://github.com/projectdiscovery/naabu) and fingerprinting the discovered devices with [Fingerprintx](https://github.com/praetorian-inc/fingerprintx). Results from this are published to a message bus for further processing by other services. The microservice design was chosen so that it would be easy to scale out the scanning infrastructure by adding more crawler instances as needed.
 
 #### Persistence
 
-The Persistence component consumes scan results and enriches them with other data sources such as ASN and location info from GeoIP. It then stores the enriched data in a MongoDB database. This allows for efficient querying and retrieval of scan data for analysis and reporting.
+The Persistence component consumes scan from the crawler and enriches them with other data sources such as GeoIP databases and vulnerability data. It then stores the enriched data in a NoSQL database. This allows for efficient querying and retrieval of scan data for analysis and reporting.
 
 #### API
 
-The API component provides a RESTful interface for accessing scan data stored in MongoDB. It serves as the backend for the Rigour UI, enabling users to query and retrieve scan results.
+The API component provides a RESTful interface for accessing scan data stored in the database. It serves as the backend for the Rigour UI, enabling users to query and retrieve scan results.
 
 #### User Interface
 
@@ -95,6 +94,17 @@ The Rigour UI provides an intuitive interface for viewing scan results. You can 
 - **Description**: Retrieve available facets for filtering search results.
 - **Query Parameters**:
     - `filter` (optional, string): A JSON-encoded MongoDB-style query object to restrict the aggregation to a subset of hosts.
+
+## Supported Systems
+
+Rigour is designed to be platform-independent and can run on any system that supports Docker. Currently Rigour is primarily tested on Linux-based systems which perform best. I've also tested it on Apple Silicon Macs but performance is not as good for port discovery, will need to address this in future.
+
+## Future Features
+
+- [ ] Vulnerability Scanning Integration
+- [ ] Improved Logging and Monitoring
+- [ ] Enhance fingerprinting protocol support
+- [ ] Distributed Crawler Support (e.g., Kubernetes & CIDR scheduling)
 
 ## Acknowledgements
 

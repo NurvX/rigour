@@ -13,8 +13,8 @@ COPY . .
 # Download dependencies
 RUN go mod download
 
-# Build the crawler binary
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -o crawler ./cmd/crawler
+# Build the crawler binary for target platform
+RUN go build -a -o crawler ./cmd/crawler
 
 # Stage 2: Runtime
 FROM alpine:latest
