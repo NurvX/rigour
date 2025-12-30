@@ -179,7 +179,7 @@ func (repo *HostRepository) Search(ctx context.Context, filter map[string]interf
 	}
 	defer cursor.Close(ctx)
 
-	var hosts []types.Host
+	hosts := []types.Host{}
 	if err := cursor.All(ctx, &hosts); err != nil {
 		return nil, "", fmt.Errorf("mongodb: failed to decode results: %w", err)
 	}

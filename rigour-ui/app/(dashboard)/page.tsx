@@ -73,7 +73,9 @@ export default async function Home({ searchParams: searchParamsPromise }: PagePr
 
     // Fetch facets for the current filter to show accurate counts
     const facetsResult = await getFacets(filter);
-    facets = facetsResult.facets || {};
+    facets = Object.keys(facetsResult.facets).length === 0
+      ? { services: {}, countries: [], asns: [] }
+      : facetsResult.facets;
   } catch (err) {
     console.error('Failed to fetch data:', err);
     error = err instanceof Error ? err.message : 'Failed to fetch data';
