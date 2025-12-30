@@ -332,12 +332,12 @@ func (repo *HostRepository) Facets(ctx context.Context, filter map[string]interf
 										asnCode = uint32(v)
 									}
 								}
-								
+
 								var organization string
 								if orgVal, ok := idMap["organization"]; ok {
 									organization = fmt.Sprintf("%v", orgVal)
 								}
-								
+
 								counts.ASNs = append(counts.ASNs, storage.ASNFacet{
 									Code:  asnCode,
 									Name:  organization,
