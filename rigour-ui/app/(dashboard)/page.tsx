@@ -18,7 +18,7 @@ export default async function Home({ searchParams: searchParamsPromise }: PagePr
 
   try {
     // Build filter from search params
-    const filter: Record<string, any> = {};
+    const filter: Record<string, unknown> = {};
 
     // Parse filters from facet selections
     const selectedCountries = searchParams.countries
@@ -38,7 +38,7 @@ export default async function Home({ searchParams: searchParamsPromise }: PagePr
       : [];
 
     if (selectedCountries.length > 0) {
-      filter['asn.country'] = { $in: selectedCountries };
+      filter['location.country_code'] = { $in: selectedCountries };
     }
 
     if (selectedASNs.length > 0) {
